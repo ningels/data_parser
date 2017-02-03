@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #----------------------------------------------
 #Explorer Mode
 #
@@ -8,15 +9,19 @@
 # 2) How much of a bonus did each employee get? (bonuses are paid to employees who pilot the Planet Express)
 # 3) How many trips did each employee pilot?
 # 4) Define and use y"our Delivery class to represent each shipment
-# 5) Different e"mployees have favorite destinations they always pilot to
 #
-#Fry - pilots to Earth (because he isn't allowed into space)
-#Amy - pilots to Mars (so she can visit her family)
-#Bender - pilots to Uranus (teeheee...)
-#Leela - pilots everywhere else because she is the only responsible one
-#They get a bonus of 10% of the money for the shipment as the bonus
+# Different e"mployees have favorite destinations they always pilot to
+#
+# Fry - pilots to Earth (because he isn't allowed into space)
+# Amy - pilots to Mars (so she can visit her family)
+# Bender - pilots to Uranus (teeheee...)
+# Leela - pilots everywhere else because she is the only responsible one
+# They get a bonus of 10% of the money for the shipment as the bonus
 #----------------------------------------------
+file_argument = ARGV[0].to_s
+puts "Argument: #{file_argument}"
 require 'csv'
+
 
 #creates this thing that is like a hash...
 # results of looping through the csv_string variable and doing a puts x and a puts x.inspect
@@ -41,7 +46,7 @@ require 'csv'
 #                   Mercury,Pizza,36,80000
 #<CSV::Row destination:"Mercury" what_got_shipped:"Pizza" number_of_crates:"36" money_we_made:"80000">
 
-csv_string = CSV.foreach("planet_express_logs.csv", headers: true, header_converters: :symbol)
+
 
 class Delivery
   attr_accessor :destination, :what_got_shipped, :number_of_crates, :money_we_made
@@ -54,16 +59,49 @@ class Delivery
   end
 end
 
-deliveries = []
+#csv_string = CSV.foreach("planet_express_logs.csv", headers: true, header_converters: :symbol)
 
-csv_string.each do |x|
-  deliveries << Delivery.new(x)
+
+#----------------------------------
+# class Parse
+# Notes:  for a class, only things in the class or accessible.
+# I was getting stuck on making a deliveries[] in my main stream of code
+# This wasn't available to the class.  To a method outside of the class
+# would have been?
+
+class Parse
+
+  attr_accessor :file_name
+  def initialize(file_name:)
+    @file_name = file_name
+  end
+
+  def parse_data
+     csv_string = CSV.foreach(file_name, headers: true, header_converters: :symbol)
+     array_from_file = []
+#Chris said this each could be a collect....
+     csv_string.each do |x|
+       array_from_file << Delivery.new(x)
+     end
+     array_from_file
+  end
+
 end
+
+
+deliveries = Parse.new(file_name: file_argument).parse_data
+#csv_string = Parse.new(file_name: "planet_express_logs.csv").parse_data
+
+
+#csv_string.each do |x|
+#  deliveries << Delivery.new(x)
+#end
 
 # 1)  How much money did we make?  use reduce command
 
 total_made = deliveries.reduce(0) { |sum, row|  sum += row.money_we_made  }
 puts "Total money made for all deliveries: #{total_made}"
+puts " "
 
 #2) How much of a bonus did each employee get? (bonuses are paid to employees who pilot the Planet Express)
 
@@ -84,22 +122,11 @@ deliveries.each do |b|
   person = plant_to_pilot[b.destination]
   amount = b.money_we_made * 10 / 100
   bonus[person] += amount
-
-#  amount = b.money_we_made * 10 / 100
-#  case b.destination
-#    when "Earth"
-#      bonus["Fry"] += amount
-#    when "Uranus"
-#      bonus["Bender"] += amount
-#    when "Mars"
-#      bonus["Amy"] += amount
-#    else
-#      bonus["Leela"] += amount
-#
-#  end
 end
 
+
 bonus.each_pair { |key, value| puts "Pilot #{key} made a bonus of #{value}"}
+puts " "
 
 
 #Array#count{|i| i.even?}
@@ -118,3 +145,22 @@ deliveries.each do |b|
 end
 
 flight_count.each_pair { |key, value| puts "Pilot #{key} made #{value} flights"}
+puts " "
+
+#Adventure Mode
+#How much money did we make broken down by planet?
+
+
+unique_keys = deliveries.collect { |x| x.destination }
+unique_keys.uniq!
+
+unique_keys.each do |x|
+  dest_var = x
+  deliveries_by_key = deliveries.select {|z| z.destination == dest_var}
+  total_made = 0
+  total_made = deliveries_by_key.reduce(0) { |sum, row|  sum += row.money_we_made  }
+
+#total_made = deliveries.reduce(0) { |sum, row|  sum += row.money_we_made  }
+  puts "Destination #{dest_var} and money made #{total_made}"
+
+end
